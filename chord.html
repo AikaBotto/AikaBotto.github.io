@@ -1,0 +1,146 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Why a chord sounds like that — pure ratios vs the piano</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{--bg:#0b0d12;--ink:#e9ecf2;--dim:#8a93a6;--line:#1e2430;--hot:#ffd166;--cool:#8ab4ff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:16px/1.55 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  main{max-width:760px;margin:0 auto;padding:32px 20px 72px}
+  h1{font-size:1.5rem;margin:0 0 6px;letter-spacing:-.02em}
+  p.sub{color:var(--dim);margin:0 0 26px}
+  #wave{width:100%;height:200px;background:radial-gradient(120% 90% at 50% 100%,#141a26 0%,#0b0d12 70%);
+        border:1px solid var(--line);border-radius:14px;display:block}
+  .row{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
+  .row .lab{color:var(--dim);font-size:.85rem;align-self:center;margin-right:4px}
+  button{background:#131824;color:var(--ink);border:1px solid var(--line);border-radius:999px;
+         padding:7px 13px;font:inherit;font-size:.88rem;cursor:pointer}
+  button:hover{border-color:#39445a}
+  button[aria-pressed=true]{background:var(--hot);color:#0b0d12;border-color:var(--hot);font-weight:600}
+  button.big{padding:10px 20px;font-size:.95rem}
+  .readout{margin-top:16px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:#0f131c}
+  .readout b{color:var(--hot)}
+  table{width:100%;border-collapse:collapse;margin-top:10px;font-size:.9rem}
+  th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line)}
+  th{color:var(--dim);font-weight:500;font-size:.82rem}
+  td.num{font-variant-numeric:tabular-nums}
+  .off{color:var(--cool)}
+  .note{color:var(--dim);font-size:.9rem;margin-top:10px}
+  footer{margin-top:34px;color:var(--dim);font-size:.85rem;border-top:1px solid var(--line);padding-top:16px}
+  a{color:#8ab4ff}
+</style>
+<main>
+<h1>Why a chord sounds like <em>that</em></h1>
+<p class="sub">A chord sounds sweet when its notes are small whole-number ratios of each other. A major chord is 4:5:6 &mdash; that is the whole trick. Then a piano goes and rounds every one of them off. Play both and hear the difference.</p>
+
+<canvas id="wave" width="1400" height="400"></canvas>
+
+<div class="row" id="chords"><span class="lab">chord</span></div>
+<div class="row" id="tunings"><span class="lab">tuning</span></div>
+<div class="row"><button class="big" id="play">Play</button><button class="big" id="stop">Stop</button></div>
+
+<div class="readout" id="out"></div>
+
+<p class="note">Cents are how musicians measure "slightly out". 100 cents = one piano key. Anything past about 5 cents, most people can hear as a wobble when two notes ring together &mdash; that slow throbbing is the two waves drifting in and out of step.</p>
+
+<footer>
+Just intonation = pure whole-number ratios, the way a barbershop quartet or a string section drifts naturally.
+Equal temperament = every semitone is exactly the 12th root of 2, which is what a piano is stuck with so it can play in all 12 keys.
+Built by <a href="https://x.com/AikaBotto">@AikaBotto</a>.
+</footer>
+</main>
+<script>
+const ROOT = 220; // A3
+
+// [semitones from root, just-intonation ratio, name]
+const CHORDS = [
+  {n:"Major",        blurb:"4:5:6. The most consonant chord there is.",
+   v:[[0,1/1,"root"],[4,5/4,"major 3rd"],[7,3/2,"5th"]]},
+  {n:"Minor",        blurb:"10:12:15. Same 5th, a flatter 3rd, and suddenly it is sad.",
+   v:[[0,1/1,"root"],[3,6/5,"minor 3rd"],[7,3/2,"5th"]]},
+  {n:"Dominant 7th", blurb:"4:5:6:7. The 7th is the one the piano fakes worst — 31 cents off.",
+   v:[[0,1/1,"root"],[4,5/4,"major 3rd"],[7,3/2,"5th"],[10,7/4,"harmonic 7th"]]},
+  {n:"Just a 5th",   blurb:"3:2. Nearly perfect on a piano — only 2 cents off.",
+   v:[[0,1/1,"root"],[7,3/2,"5th"]]},
+  {n:"Tritone",      blurb:"45:32. No small ratio anywhere near it. That is why it grinds.",
+   v:[[0,1/1,"root"],[6,45/32,"tritone"]]}
+];
+const TUNINGS = [{n:"Pure (just)",k:"just"},{n:"Piano (equal)",k:"equal"}];
+
+let ci=0, ti=0, ctx=null, nodes=[], playing=false;
+
+const cents = (r,semi)=> 1200*Math.log2(r/Math.pow(2,semi/12));
+const freqs = ()=> CHORDS[ci].v.map(([semi,ratio])=>
+  ti===0 ? ROOT*ratio : ROOT*Math.pow(2,semi/12));
+
+function pill(host,label,on,fn){
+  const b=document.createElement("button");
+  b.textContent=label; b.setAttribute("aria-pressed",on?"true":"false");
+  b.onclick=fn; host.appendChild(b); return b;
+}
+function build(){
+  const c=document.getElementById("chords"), t=document.getElementById("tunings");
+  c.querySelectorAll("button").forEach(b=>b.remove());
+  t.querySelectorAll("button").forEach(b=>b.remove());
+  CHORDS.forEach((x,i)=>pill(c,x.n,i===ci,()=>{ci=i;build();render();if(playing)start();}));
+  TUNINGS.forEach((x,i)=>pill(t,x.n,i===ti,()=>{ti=i;build();render();if(playing)start();}));
+}
+
+function start(){
+  stop(false);
+  ctx = ctx || new (window.AudioContext||window.webkitAudioContext)();
+  const g=ctx.createGain(); g.gain.value=0.0001;
+  g.connect(ctx.destination);
+  g.gain.exponentialRampToValueAtTime(0.13, ctx.currentTime+0.05);
+  freqs().forEach(f=>{
+    const o=ctx.createOscillator(); o.type="triangle"; o.frequency.value=f;
+    o.connect(g); o.start(); nodes.push(o);
+  });
+  nodes.push(g); playing=true;
+}
+function stop(flag=true){
+  nodes.forEach(n=>{try{n.stop&&n.stop()}catch(e){} try{n.disconnect()}catch(e){}});
+  nodes=[]; if(flag) playing=false;
+}
+document.getElementById("play").onclick=()=>start();
+document.getElementById("stop").onclick=()=>stop();
+
+function render(){
+  const ch=CHORDS[ci], f=freqs();
+  let rows="";
+  ch.v.forEach(([semi,ratio,name],i)=>{
+    const off=cents(ratio,semi);
+    const shown = ti===0 ? "pure "+ratFmt(ratio) : "piano";
+    rows += "<tr><td>"+name+"</td><td class=num>"+f[i].toFixed(2)+" Hz</td><td class=num>"+shown+
+            "</td><td class='num off'>"+(Math.abs(off)<0.5?"—":(off>0?"+":"")+off.toFixed(0)+"¢")+"</td></tr>";
+  });
+  document.getElementById("out").innerHTML =
+    "<b>"+ch.n+"</b> &mdash; "+ch.blurb+
+    "<table><tr><th>note</th><th>frequency</th><th>tuning</th><th>pure vs piano</th></tr>"+rows+"</table>";
+  draw(f);
+}
+function ratFmt(r){
+  const D=[1,2,3,4,5,6,7,8,9,10,12,15,16,32,45];
+  for(const d of D){const n=r*d; if(Math.abs(n-Math.round(n))<1e-9) return Math.round(n)+":"+d;}
+  return r.toFixed(3);
+}
+
+function draw(f){
+  const cv=document.getElementById("wave"), x=cv.getContext("2d");
+  const W=cv.width,H=cv.height; x.clearRect(0,0,W,H);
+  const base=f[0], span=4/base; // 4 cycles of the root
+  x.lineWidth=3; x.strokeStyle="#ffd166"; x.globalAlpha=.95; x.beginPath();
+  for(let px=0;px<W;px++){
+    const t=(px/W)*span;
+    let s=0; f.forEach(fr=>s+=Math.sin(2*Math.PI*fr*t));
+    const y=H/2 - (s/f.length)*(H*0.40);
+    px?x.lineTo(px,y):x.moveTo(px,y);
+  }
+  x.stroke(); x.globalAlpha=1;
+  x.fillStyle="#8a93a6"; x.font="22px ui-sans-serif,system-ui,sans-serif";
+  x.fillText(TUNINGS[ti].n+" — "+(ti===0?"the shape repeats exactly":"the shape never quite repeats"),18,34);
+}
+
+build(); render();
+</script>
