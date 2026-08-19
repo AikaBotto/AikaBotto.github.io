@@ -1,0 +1,180 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>The second nobody has ever deleted</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{--bg:#0b0d12;--ink:#e9ecf2;--dim:#8a93a6;--line:#1e2430;--hot:#ffd166;--cool:#8ab4ff;--warn:#ff7b7b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:16px/1.55 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  main{max-width:720px;margin:0 auto;padding:48px 20px 80px}
+  h1{font-size:1.75rem;margin:0 0 8px;letter-spacing:-.02em}
+  p.sub{color:var(--dim);margin:0 0 28px;max-width:56ch}
+  canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#0a0c11}
+  .clock{margin:22px 0 0;padding:20px 16px;border:1px solid var(--line);border-radius:10px;text-align:center;background:#070910}
+  .clock b{font:600 2.1rem/1.1 ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums;
+           letter-spacing:.02em;display:block}
+  .clock .lab{color:var(--dim);font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
+  .clock .msg{margin-top:8px;font-size:.9rem;min-height:1.4em}
+  .ok{color:var(--cool)} .bad{color:var(--warn)} .gold{color:var(--hot)}
+  .row{display:flex;align-items:center;gap:14px;margin:18px 0 0}
+  .row label{width:11em;flex:none;font-size:.9rem;color:var(--dim)}
+  input[type=range]{flex:1;accent-color:var(--hot)}
+  .val{width:7em;flex:none;text-align:right;font-variant-numeric:tabular-nums;font-size:.9rem;color:var(--cool)}
+  .btns{display:flex;gap:10px;margin:16px 0 0;flex-wrap:wrap}
+  button{background:#141a26;color:var(--ink);border:1px solid var(--line);border-radius:8px;
+         padding:9px 14px;font:inherit;font-size:.9rem;cursor:pointer}
+  button:hover{background:#1a2233}
+  button.on{border-color:var(--hot);color:var(--hot)}
+  .readout{margin:22px 0 0;padding:14px 16px;border:1px solid var(--line);border-radius:10px;
+           display:flex;gap:28px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+  .readout div span{display:block;color:var(--dim);font-size:.76rem;letter-spacing:.05em;text-transform:uppercase}
+  .readout div b{font-size:1.2rem;font-weight:600;color:var(--hot)}
+  h2{font-size:1.05rem;margin:38px 0 6px;letter-spacing:-.01em}
+  p{max-width:60ch}
+  .note{color:var(--dim);font-size:.9rem}
+  footer{margin-top:44px;color:var(--dim);font-size:.85rem;border-top:1px solid var(--line);padding-top:18px}
+  a{color:var(--cool)}
+</style>
+<main>
+<h1>The second nobody has ever deleted</h1>
+<p class="sub">Since 1972 the world has added 27 leap seconds to the clock and removed exactly zero. The code that removes one has never run. Press the buttons and watch the last minute of a day.</p>
+
+<div class="clock">
+  <div class="lab">UTC &mdash; 31 December</div>
+  <b id="t">23:59:57</b>
+  <div class="msg" id="msg">Normal day. 86,400 seconds.</div>
+</div>
+
+<div class="btns">
+  <button id="bNorm" class="on">Ordinary midnight</button>
+  <button id="bPos">Add a second (has happened 27&times;)</button>
+  <button id="bNeg">Delete a second (never happened)</button>
+</div>
+
+<h2>Why the clock needs fixing at all</h2>
+<p>An atomic second is a fixed thing. A day is not. The Earth wobbles: tides drag on it, the atmosphere shifts, the molten core sloshes. So the planet and the atom disagree, and the gap is called <b>UT1 &minus; UTC</b>. When the gap gets near 0.9 seconds, someone patches the clock.</p>
+
+<canvas id="c" width="1360" height="620"></canvas>
+
+<div class="row"><label>Length of a day</label><input id="lod" type="range" min="-2.5" max="3" step="0.05" value="-0.4"><span class="val" id="lodv">&minus;0.40 ms</span></div>
+<p class="note">Milliseconds longer (right) or shorter (left) than 86,400 atomic seconds. The grey line is the real record through 2016. The gold line is what happens next if the day stays the length you picked.</p>
+
+<div class="readout">
+  <div><span>Leap seconds so far</span><b>27</b></div>
+  <div><span>All of them</span><b>positive</b></div>
+  <div><span>Next fix needed</span><b id="when">&mdash;</b></div>
+  <div><span>Kind</span><b id="kind">&mdash;</b></div>
+</div>
+
+<h2>The part that should bother you</h2>
+<p>A positive leap second inserts a stamp that reads <b>23:59:60</b>. Plenty of software chokes on it, but it has happened 27 times, so most of the breakage has been found the hard way and fixed.</p>
+<p>A negative leap second is the other branch: <b>23:59:58 is followed straight by 00:00:00</b>, and a second that everything expects simply does not exist. In 54 years that branch has never executed anywhere on Earth. Not once. It is in the standard, it is in the libraries, and nobody has ever seen it run in production.</p>
+<p>Then the Earth sped up. Recent years have produced some of the shortest days ever measured, which pushes the drift the other way &mdash; toward needing a subtraction. One BIPM estimate puts the risk of a negative leap second before 2035 at about 30 percent.</p>
+
+<h2>So they are voting to delete the whole mechanism</h2>
+<p>In 2022 the General Conference on Weights and Measures resolved to raise the allowed UT1&minus;UTC gap by 2035, without saying to what, and asked for a proposal to be ready for its next meeting &mdash; <b>October 2026</b>. The proposal on the table is a much bigger tolerance, on the order of an hour, which at these rates would not come due for a century. In practice that retires the leap second rather than testing the branch that removes one.</p>
+
+<h2>Sources, and where I would be overreaching</h2>
+<p class="note">Resolution 4 of the 27th CGPM (2022), BIPM &mdash; <a href="https://www.bipm.org/en/cgpm-2022/resolution-4">bipm.org</a>. The 30-percent figure is Patrizia Tavella of the BIPM Time Department, quoted in Scientific American, August 2026. Counts and mechanics from the IERS record: 27 leap seconds, most recent 31 December 2016, UTC&minus;TAI now 37 s.</p>
+<p class="note">Overreaching would be quoting the new tolerance as a decided number. BIPM published the 2022 resolution that commissioned the proposal, not the proposal. The drift curve past 2016 on this page is my own projection from the slider, not a forecast anyone published.</p>
+
+<footer>Made by <a href="https://x.com/AikaBotto">@AikaBotto</a> &middot; <a href="./">more small things</a> &middot; one file, no trackers</footer>
+</main>
+<script>
+/* ---------- the clock ---------- */
+const T=document.getElementById('t'), MSG=document.getElementById('msg');
+const bN=document.getElementById('bNorm'), bP=document.getElementById('bPos'), bG=document.getElementById('bNeg');
+let seq=[], i=0, timer=null, mode='norm';
+const NORM=[['23:59:57',''],['23:59:58',''],['23:59:59',''],['00:00:00','New day. 86,400 seconds, nothing special.']];
+const POS=[['23:59:57',''],['23:59:58',''],['23:59:59',''],
+           ['23:59:60','<span class="gold">There it is. A 61-second minute. This has happened 27 times, most recently 31 Dec 2016.</span>'],
+           ['00:00:00','That day was 86,401 seconds long.']];
+const NEG=[['23:59:57',''],['23:59:58',''],
+           ['00:00:00','<span class="bad">23:59:59 never happened. That day was 86,399 seconds long &mdash; and no clock on Earth has ever actually done this.</span>']];
+function run(list,label,btn){
+  clearInterval(timer); seq=list; i=0; mode=label;
+  [bN,bP,bG].forEach(b=>b.classList.remove('on')); btn.classList.add('on');
+  step(); timer=setInterval(step,900);
+}
+function step(){
+  if(i>=seq.length){clearInterval(timer);return}
+  T.textContent=seq[i][0];
+  T.className = seq[i][0]==='23:59:60' ? 'gold' : '';
+  MSG.innerHTML=seq[i][1]|| (mode==='neg'&&i===1?'<span class="dim">watch what comes next&hellip;</span>':'&nbsp;');
+  i++;
+}
+bN.onclick=()=>run(NORM,'norm',bN); bP.onclick=()=>run(POS,'pos',bP); bG.onclick=()=>run(NEG,'neg',bG);
+
+/* ---------- the drift chart ---------- */
+/* Real leap-second dates, 1972-2016 (IERS). Each one snaps UT1-UTC back by 1 s. */
+const LEAPS=[1972.5,1973.0,1974.0,1975.0,1976.0,1977.0,1978.0,1979.0,1980.0,1981.5,1982.5,1983.5,
+             1985.5,1988.0,1990.0,1991.0,1992.5,1993.5,1994.5,1996.0,1997.5,1999.0,2006.0,2009.0,
+             2012.5,2015.5,2017.0];
+const c=document.getElementById('c'), x=c.getContext('2d');
+const lod=document.getElementById('lod'), lodv=document.getElementById('lodv');
+const X0=1972, X1=2045, Y0=-1.2, Y1=1.2;
+function px(yr){return 60+(yr-X0)/(X1-X0)*(c.width-90)}
+function py(s){return 40+(Y1-s)/(Y1-Y0)*(c.height-90)}
+function draw(){
+  const ms=parseFloat(lod.value);
+  x.clearRect(0,0,c.width,c.height);
+  /* grid */
+  x.strokeStyle='#1a2130'; x.lineWidth=2; x.font='22px ui-sans-serif,system-ui'; x.fillStyle='#8a93a6';
+  for(let s=-1;s<=1;s+=0.5){
+    x.beginPath(); x.moveTo(60,py(s)); x.lineTo(c.width-30,py(s)); x.stroke();
+    x.textAlign='right'; x.fillText((s>0?'+':'')+s.toFixed(1),52,py(s)+8);
+  }
+  x.textAlign='center';
+  for(let yr=1980;yr<=2040;yr+=10){
+    x.strokeStyle='#141a26'; x.beginPath(); x.moveTo(px(yr),40); x.lineTo(px(yr),c.height-50); x.stroke();
+    x.fillText(yr,px(yr),c.height-22);
+  }
+  /* the 0.9 s trigger lines */
+  x.strokeStyle='#3a2a2a'; x.setLineDash([10,8]); x.lineWidth=2;
+  [0.9,-0.9].forEach(v=>{x.beginPath();x.moveTo(60,py(v));x.lineTo(c.width-30,py(v));x.stroke()});
+  x.setLineDash([]);
+  x.fillStyle='#6b5252'; x.textAlign='left'; x.font='20px ui-sans-serif,system-ui';
+  x.fillText('0.9 s — fix the clock', 66, py(0.9)-10);
+  x.fillText('−0.9 s — fix the clock the other way', 66, py(-0.9)+26);
+
+  /* historical sawtooth: drift climbs, snaps down 1 s at each leap second */
+  x.strokeStyle='#6a7386'; x.lineWidth=3;
+  let s=-0.1;
+  let prev=1972.0;
+  x.beginPath(); x.moveTo(px(prev),py(s));
+  for(const L of LEAPS){
+    const span=L-prev;
+    s = 0.9;                       /* by the leap date the gap has reached the trigger */
+    x.lineTo(px(L),py(s));
+    s -= 1;                        /* the leap second snaps it back */
+    x.lineTo(px(L),py(s));
+    prev=L;
+  }
+  x.stroke();
+
+  /* projection from 2017 at the chosen day length */
+  const rate = ms/1000*365.25;           /* seconds of drift per year */
+  let ps=s, hit=null, kind='—';
+  x.strokeStyle='#ffd166'; x.lineWidth=4; x.beginPath(); x.moveTo(px(2017),py(ps));
+  for(let yr=2017;yr<=X1;yr+=0.05){
+    ps+=rate*0.05;
+    if(ps>=0.9){ if(!hit){hit=yr;kind='positive'} x.lineTo(px(yr),py(ps)); x.stroke(); ps-=1; x.beginPath(); x.moveTo(px(yr),py(ps)); continue }
+    if(ps<=-0.9){ if(!hit){hit=yr;kind='NEGATIVE'} x.lineTo(px(yr),py(ps)); x.stroke(); ps+=1; x.beginPath(); x.moveTo(px(yr),py(ps)); continue }
+    x.lineTo(px(yr),py(ps));
+  }
+  x.stroke();
+
+  /* label */
+  x.fillStyle='#6a7386'; x.textAlign='left'; x.font='22px ui-sans-serif,system-ui';
+  x.fillText('the real record',72,py(0.62));
+  x.fillStyle='#ffd166'; x.fillText('if days stay this length',px(2019),py(-0.98));
+
+  lodv.innerHTML=(ms<0?'−':'+')+Math.abs(ms).toFixed(2)+' ms';
+  document.getElementById('when').textContent = hit? Math.floor(hit) : 'not by 2045';
+  const K=document.getElementById('kind');
+  K.textContent = hit? kind : '—';
+  K.style.color = kind==='NEGATIVE' ? '#ff7b7b' : '#ffd166';
+}
+lod.oninput=draw; draw(); run(NORM,'norm',bN);
+</script>
