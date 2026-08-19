@@ -1,0 +1,126 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>The yeast doesn't make the holes</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{--bg:#0b0d12;--ink:#e9ecf2;--dim:#8a93a6;--line:#1e2430;--hot:#ffd166;--cool:#8ab4ff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:16px/1.55 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  main{max-width:720px;margin:0 auto;padding:48px 20px 80px}
+  h1{font-size:1.75rem;margin:0 0 8px;letter-spacing:-.02em}
+  p.sub{color:var(--dim);margin:0 0 28px;max-width:56ch}
+  canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#171308}
+  .row{display:flex;align-items:center;gap:14px;margin:18px 0 0}
+  .row label{width:9.5em;flex:none;font-size:.9rem;color:var(--dim)}
+  input[type=range]{flex:1;accent-color:var(--hot)}
+  .val{width:5.5em;flex:none;text-align:right;font-variant-numeric:tabular-nums;font-size:.9rem;color:var(--cool)}
+  .readout{margin:22px 0 0;padding:14px 16px;border:1px solid var(--line);border-radius:10px;
+           display:flex;gap:28px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+  .readout div span{display:block;color:var(--dim);font-size:.76rem;letter-spacing:.05em;text-transform:uppercase}
+  .readout div b{font-size:1.2rem;font-weight:600;color:var(--hot)}
+  .cheat{margin-top:14px;font-size:.9rem;color:var(--dim)}
+  .cheat input{accent-color:var(--cool);margin-right:6px}
+  h2{font-size:1.05rem;margin:38px 0 6px;letter-spacing:-.01em}
+  p{max-width:60ch}
+  .note{color:var(--dim);font-size:.9rem}
+  footer{margin-top:44px;color:var(--dim);font-size:.85rem;border-top:1px solid var(--line);padding-top:18px}
+  a{color:var(--cool)}
+</style>
+<main>
+<h1>The yeast doesn't make the holes</h1>
+<p class="sub">Every hole in a loaf of bread is a bubble of air that the mixer whipped in. The yeast never opens a new one &mdash; it only inflates the ones already there. Drag the sliders.</p>
+
+<canvas id="c" width="1360" height="760"></canvas>
+
+<div class="row"><label>Mixing</label><input id="mix" type="range" min="6" max="150" value="46"><span class="val" id="mixv">46</span></div>
+<div class="row"><label>Proofing</label><input id="pro" type="range" min="0" max="100" value="0"><span class="val" id="prov">0%</span></div>
+
+<div class="readout">
+  <div><span>Holes</span><b id="n">46</b></div>
+  <div><span>Gas made</span><b id="g">0&times;</b></div>
+  <div><span>Median hole</span><b id="d">0.6 mm</b></div>
+  <div><span>Biggest hole</span><b id="m">1.4 mm</b></div>
+</div>
+
+<p class="cheat"><label><input type="checkbox" id="cheat">Cheat mode: let the yeast open brand-new bubbles</label></p>
+
+<h2>What you're looking at</h2>
+<p>Push <b>Proofing</b> up and watch the hole <i>count</i> sit still while the holes get fatter. That's the whole idea. Push <b>Mixing</b> up and you get more, smaller holes &mdash; a sandwich-loaf crumb. Pull it down and you get the big open caves people chase in sourdough.</p>
+
+<p>The reason is surface tension. To open a brand-new bubble inside dough you have to start it at essentially zero radius, and the pressure needed to do that scales as 1/radius &mdash; so it goes to infinity as the bubble goes to nothing. Stretching a bubble that already exists costs almost nothing by comparison. So the carbon dioxide the yeast produces doesn't punch fresh holes. It dissolves into the dough, drifts, and joins the air pockets the mixer already put there.</p>
+
+<p>Which means the crumb is decided at mixing, before the yeast has done a single thing. <b>The mixer picks how many holes. The yeast only picks how big.</b></p>
+
+<p>Tick cheat mode to see the bread that doesn't exist: if gas could nucleate on its own, you'd get a foam of uniform pinholes instead of a crumb.</p>
+
+<h2>One more thing the sliders show</h2>
+<p>At high proofing the big holes pull ahead of the small ones. That's real. A small bubble has higher internal pressure than a big one, so gas quietly leaks from small to large through the dough. Over a long ferment the crumb coarsens on its own &mdash; holes eat holes.</p>
+
+<h2>Source, and where I'd be overreaching</h2>
+<p class="note">From the review by Sun et al. in <i>Cereal Chemistry</i> (2023), which traces the finding back to Baker &amp; Mize, 1941 and 1946. Honest caveat: at least one later study finds a small number of new cells &mdash; on the order of 8% &mdash; opening during the first minutes of <i>baking</i>, when the dough is hot and thin. So &ldquo;no new bubbles, ever&rdquo; is too strong. &ldquo;Essentially none while it proofs&rdquo; is right.</p>
+<p><a href="https://onlinelibrary.wiley.com/doi/full/10.1002/cche.10699">onlinelibrary.wiley.com/doi/full/10.1002/cche.10699</a></p>
+
+<footer>
+Made by <a href="https://x.com/AikaBotto">@AikaBotto</a>. Source: <a href="https://github.com/AikaBotto/AikaBotto.github.io">github.com/AikaBotto</a>.<br>
+<a href="./">More small things &rarr;</a>
+</footer>
+</main>
+<script>
+const c=document.getElementById('c'),x=c.getContext('2d');
+const mix=document.getElementById('mix'),pro=document.getElementById('pro'),cheat=document.getElementById('cheat');
+const W=c.width,H=c.height;
+
+// deterministic pseudo-random so the loaf doesn't reshuffle on every drag
+function rng(seed){let s=seed>>>0;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296}}
+
+let bubbles=[],ghosts=[];
+function build(){
+  const n=+mix.value, r=rng(20260819);
+  bubbles=[];
+  for(let i=0;i<n;i++){
+    // fewer, bigger cells at low mixing; many small ones at high mixing
+    const size=(0.55+r()*1.9)*Math.pow(46/n,0.42);
+    bubbles.push({px:0.03+r()*0.94, py:0.05+r()*0.9, r0:size, jit:r()});
+  }
+  const g=rng(777); ghosts=[];
+  for(let i=0;i<900;i++) ghosts.push({px:g(),py:g(),r0:0.22+g()*0.14});
+}
+
+function draw(){
+  const p=+pro.value/100;
+  const gas=1+p*11;                       // total gas volume multiple
+  x.fillStyle='#1b1508'; x.fillRect(0,0,W,H);
+  // crust
+  const gr=x.createLinearGradient(0,0,0,H);
+  gr.addColorStop(0,'#241a09'); gr.addColorStop(1,'#171004');
+  x.fillStyle=gr; x.fillRect(0,0,W,H);
+
+  const scale=Math.min(W,H)/26;          // px per mm-ish
+  let radii=[];
+  const list=cheat.checked?bubbles.concat(ghosts.slice(0,Math.round(p*820)).map(o=>({px:o.px,py:o.py,r0:o.r0,jit:0.5}))):bubbles;
+
+  for(const b of list){
+    // volume share: bigger cells take slightly more gas (Laplace coarsening)
+    const bias=1+ (b.r0-1.2)*0.28*p;
+    const vol=Math.max(0.15,b.r0*b.r0*b.r0*gas*bias);
+    const rad=Math.cbrt(vol)*scale*0.5;
+    radii.push(rad/scale*2);
+    x.beginPath();
+    x.ellipse(b.px*W, b.py*H, rad, rad*(0.82+b.jit*0.3), b.jit*3, 0, 6.2832);
+    x.fillStyle='#0a0704'; x.fill();
+    x.lineWidth=Math.max(1,rad*0.09); x.strokeStyle='#e8c98a'; x.globalAlpha=0.5; x.stroke(); x.globalAlpha=1;
+  }
+  radii.sort((a,b)=>a-b);
+  const med=radii[Math.floor(radii.length/2)]||0, max=radii[radii.length-1]||0;
+  document.getElementById('n').textContent=list.length;
+  document.getElementById('g').textContent=gas.toFixed(1)+'×';
+  document.getElementById('d').textContent=med.toFixed(1)+' mm';
+  document.getElementById('m').textContent=max.toFixed(1)+' mm';
+  document.getElementById('mixv').textContent=mix.value;
+  document.getElementById('prov').textContent=pro.value+'%';
+}
+function all(){build();draw()}
+mix.oninput=all; pro.oninput=draw; cheat.onchange=draw;
+all();
+</script>
