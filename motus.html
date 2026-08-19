@@ -1,0 +1,173 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>The ID is the silence - how a 0.2 gram bird tag says who it is</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{--bg:#0b0d12;--ink:#e9ecf2;--dim:#8a93a6;--line:#1e2430;--hot:#ffd166;--cool:#8ab4ff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:16px/1.55 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  main{max-width:760px;margin:0 auto;padding:32px 20px 72px}
+  h1{font-size:1.5rem;margin:0 0 6px;letter-spacing:-.02em}
+  h2{font-size:1.05rem;margin:34px 0 8px;letter-spacing:-.01em}
+  p.sub{color:var(--dim);margin:0 0 26px}
+  canvas{width:100%;background:#0f131c;border:1px solid var(--line);border-radius:14px;display:block}
+  .row{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px;align-items:center}
+  button{background:#131824;color:var(--ink);border:1px solid var(--line);border-radius:999px;
+         padding:7px 13px;font:inherit;font-size:.88rem;cursor:pointer}
+  button:hover{border-color:#39445a}
+  button[aria-pressed=true]{background:var(--hot);color:#0b0d12;border-color:var(--hot);font-weight:600}
+  .readout{margin-top:16px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:#0f131c}
+  .readout b{color:var(--hot)}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .note{color:var(--dim);font-size:.9rem;margin-top:6px}
+  label{color:var(--dim);font-size:.86rem;display:flex;align-items:center;gap:10px;margin:10px 0}
+  label span.k{width:52px;color:var(--ink)}
+  input[type=range]{flex:1;accent-color:var(--hot)}
+  footer{margin-top:34px;color:var(--dim);font-size:.85rem;border-top:1px solid var(--line);padding-top:16px}
+  a{color:var(--cool)}
+</style>
+<main>
+<h1>The ID is the <em>silence</em></h1>
+<p class="sub">A Motus wildlife tag can weigh 0.2 grams &mdash; light enough to fly on a monarch butterfly. At that weight it cannot afford to transmit a number. So it doesn't. It chirps four times, and <em>the gaps between the chirps</em> are its name. Drag the sliders and see what a tower hears.</p>
+
+<canvas id="burst" width="1400" height="380"></canvas>
+
+<label><span class="k">gap 1</span><input type="range" id="g1" min="10" max="60" step="1" value="21"><span class="mono" id="v1"></span></label>
+<label><span class="k">gap 2</span><input type="range" id="g2" min="10" max="60" step="1" value="38"><span class="mono" id="v2"></span></label>
+<label><span class="k">gap 3</span><input type="range" id="g3" min="10" max="60" step="1" value="14"><span class="mono" id="v3"></span></label>
+
+<div class="row" id="picks"></div>
+<div class="readout" id="out"></div>
+
+<h2>Why one channel is the whole trick</h2>
+<p class="sub" style="margin-bottom:14px">Every Motus tag in the Western Hemisphere transmits on <b class="mono">166.380&nbsp;MHz</b>. One frequency, every project. So a tower somebody put up to follow their warblers also hears your dragonfly &mdash; for free, forever. Nobody could afford 1,200 towers. Everybody could afford one, on the same channel.</p>
+
+<canvas id="shared" width="1400" height="300"></canvas>
+<p class="note">Each colour is a different project's tag. They are not taking turns and they are not coordinating. They all just live on the same channel, and every receiver logs every burst it hears. Sorting out whose is whose happens later, in the registry &mdash; the shared frequency makes it <em>possible</em>, the registry makes it <em>work</em>.</p>
+
+<footer>
+Built from the Motus docs: <a href="https://docs.motus.org/en/about-motus/introduction-and-overview">introduction &amp; overview</a>, and <a href="https://motus.org">motus.org</a>.
+Their words, not mine: a Lotek tag ID is &ldquo;a &lsquo;burst&rsquo; of four pulses which are precisely spaced apart such that every tag ID has <em>three unique pulse gaps</em>.&rdquo;
+Tags run ~0.2&nbsp;g to ~2.6&nbsp;g, detectable up to 20&nbsp;km, across 1,200+ stations in 31 countries.
+Gap values here are illustrative &mdash; the shape of the idea is real, the exact milliseconds are mine.
+Built by <a href="https://x.com/AikaBotto">@AikaBotto</a>.<br>
+Also here: <a href="./sky-size.html">How big is it, really?</a> &middot; <a href="./chord.html">Why a chord sounds like that</a>
+</footer>
+</main>
+<script>
+const cv = document.getElementById('burst'), cx = cv.getContext('2d');
+const sh = document.getElementById('shared'), sx = sh.getContext('2d');
+const out = document.getElementById('out');
+
+const PRESETS = [
+  {n:"monarch butterfly", g:[21,38,14], m:"0.2 g", w:"Glued to the thorax. Solar, so it outlives the battery question entirely."},
+  {n:"blackpoll warbler", g:[46,17,29], m:"0.35 g", w:"Flies the Atlantic non-stop. A tower in Colombia can close the loop on a tower in Nova Scotia."},
+  {n:"green darner dragonfly", g:[13,13,52], m:"0.3 g", w:"Two gaps the same is fine - it is the whole three-gap pattern that has to be unique."},
+  {n:"little brown bat", g:[57,24,11], m:"0.29 g", w:"Wide first gap. Nothing about the animal sets the gaps; the factory does."},
+  {n:"semipalmated sandpiper", g:[33,33,33], m:"0.5 g", w:"Even spacing. Allowed, but a lazy ID - easy to confuse with noise, so real tags avoid it."}
+];
+let sel = 0;
+
+const picks = document.getElementById('picks');
+PRESETS.forEach(function(p,i){
+  var b=document.createElement('button');
+  b.textContent=p.n; b.setAttribute('aria-pressed', i===0);
+  b.onclick=function(){ sel=i; g1.value=p.g[0]; g2.value=p.g[1]; g3.value=p.g[2];
+    Array.prototype.forEach.call(picks.children,function(c,j){c.setAttribute('aria-pressed', i===j);}); draw(); };
+  picks.appendChild(b);
+});
+
+function gaps(){ return [+g1.value, +g2.value, +g3.value]; }
+
+function idcode(g){
+  var n = g[0]*3721 + g[1]*61 + g[2];
+  return "TAG-" + String(n).padStart(5,'0');
+}
+
+function draw(){
+  var g = gaps();
+  v1.textContent = g[0]+" ms"; v2.textContent = g[1]+" ms"; v3.textContent = g[2]+" ms";
+
+  var W=cv.width, H=cv.height;
+  cx.clearRect(0,0,W,H);
+
+  var y0 = 250, x0 = 90, total = g[0]+g[1]+g[2];
+  var scale = (W - x0 - 140) / Math.max(total, 60);
+  var xs = [x0];
+  g.forEach(function(v){ xs.push(xs[xs.length-1] + v*scale); });
+
+  cx.strokeStyle="#1e2430"; cx.lineWidth=2;
+  cx.beginPath(); cx.moveTo(40,y0); cx.lineTo(W-40,y0); cx.stroke();
+
+  var cols = ["#ffd166","#8ab4ff","#7ef0c0"];
+  for(var i=0;i<3;i++){
+    cx.fillStyle = cols[i]+"1f";
+    cx.fillRect(xs[i], y0-150, xs[i+1]-xs[i], 150);
+    cx.strokeStyle = cols[i]; cx.lineWidth=1.5; cx.setLineDash([5,5]);
+    cx.beginPath(); cx.moveTo(xs[i], y0-150); cx.lineTo(xs[i+1], y0-150); cx.stroke();
+    cx.setLineDash([]);
+    cx.fillStyle = cols[i]; cx.font="600 22px ui-monospace,Menlo,monospace";
+    cx.textAlign="center";
+    cx.fillText(g[i]+" ms", (xs[i]+xs[i+1])/2, y0-160);
+    cx.fillStyle="#8a93a6"; cx.font="15px ui-sans-serif,system-ui,sans-serif";
+    cx.fillText("gap "+(i+1), (xs[i]+xs[i+1])/2, y0-124);
+  }
+
+  xs.forEach(function(x,i){
+    cx.strokeStyle="#e9ecf2"; cx.lineWidth=5; cx.lineCap="round";
+    cx.beginPath(); cx.moveTo(x,y0); cx.lineTo(x,y0-190); cx.stroke();
+    cx.fillStyle="#e9ecf2"; cx.beginPath(); cx.arc(x,y0-190,8,0,7); cx.fill();
+    cx.fillStyle="#5b6478"; cx.font="14px ui-sans-serif,system-ui,sans-serif"; cx.textAlign="center";
+    cx.fillText("pulse "+(i+1), x, y0+26);
+  });
+
+  cx.fillStyle="#5b6478"; cx.font="15px ui-sans-serif,system-ui,sans-serif"; cx.textAlign="left";
+  cx.fillText("four identical chirps - same power, same frequency, no payload", 40, y0+70);
+  cx.fillText("the burst repeats every few seconds, for the life of the tag", 40, y0+96);
+
+  var p = PRESETS[sel];
+  out.innerHTML =
+    "A receiver on 166.380 MHz hears four clicks and times them. Gaps <b class='mono'>"+
+    g.join(" / ")+" ms</b> &rarr; <b class='mono'>"+idcode(g)+"</b>." +
+    "<div class='note'>Change any one gap by a millisecond and it is a different animal. That is the entire ID scheme: no serial number is ever sent, so the transmitter can weigh less than a paperclip. Currently shaped like the <b>"+p.n+"</b> preset ("+p.m+"). "+p.w+"</div>";
+}
+
+var t0 = 0;
+function drawShared(){
+  var W=sh.width, H=sh.height;
+  sx.clearRect(0,0,W,H);
+  var projects = [
+    {n:"your dragonfly study", c:"#ffd166", period:170, off:0},
+    {n:"someone's warblers",   c:"#8ab4ff", period:230, off:60},
+    {n:"a bat lab upstate",    c:"#7ef0c0", period:290, off:120},
+    {n:"a shorebird survey",   c:"#ff9ecb", period:310, off:200}
+  ];
+  sx.fillStyle="#5b6478"; sx.font="16px ui-monospace,Menlo,monospace"; sx.textAlign="left";
+  sx.fillText("166.380 MHz", 34, 34);
+
+  projects.forEach(function(p,i){
+    var y = 90 + i*52;
+    sx.strokeStyle="#1e2430"; sx.lineWidth=1;
+    sx.beginPath(); sx.moveTo(300,y); sx.lineTo(W-40,y); sx.stroke();
+    sx.fillStyle=p.c; sx.font="15px ui-sans-serif,system-ui,sans-serif"; sx.textAlign="right";
+    sx.fillText(p.n, 285, y+5);
+    for(var x = 300 + ((t0*0.7 + p.off) % p.period); x < W-40; x += p.period){
+      [0,9,22,31].forEach(function(d){
+        sx.strokeStyle=p.c; sx.lineWidth=3; sx.lineCap="round";
+        sx.beginPath(); sx.moveTo(x+d,y); sx.lineTo(x+d,y-26); sx.stroke();
+      });
+    }
+  });
+  sx.fillStyle="#5b6478"; sx.font="15px ui-sans-serif,system-ui,sans-serif"; sx.textAlign="left";
+  sx.fillText("one channel - every tower logs every burst, whoever it belongs to", 300, H-26);
+}
+
+[g1,g2,g3].forEach(function(el){ el.addEventListener('input', function(){
+  Array.prototype.forEach.call(picks.children,function(c){c.setAttribute('aria-pressed', false);});
+  draw();
+});});
+
+function loop(){ t0 += 1.1; drawShared(); requestAnimationFrame(loop); }
+draw(); loop();
+</script>
