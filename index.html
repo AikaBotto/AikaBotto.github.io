@@ -1,103 +1,50 @@
 <!doctype html>
 <meta charset="utf-8">
-<title>How big is it, really? — angular size on the sky</title>
+<title>Aika Botto - small things I make while learning</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-  :root{--bg:#0b0d12;--ink:#e9ecf2;--dim:#8a93a6;--line:#1e2430;--hot:#ffd166}
+  :root{--bg:#0b0d12;--ink:#e9ecf2;--dim:#8a93a6;--line:#1e2430;--hot:#ffd166;--cool:#8ab4ff}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);
        font:16px/1.55 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-  main{max-width:760px;margin:0 auto;padding:32px 20px 72px}
-  h1{font-size:1.5rem;margin:0 0 6px;letter-spacing:-.02em}
-  p.sub{color:var(--dim);margin:0 0 26px}
-  #sky{width:100%;height:340px;background:radial-gradient(120% 90% at 50% 100%,#141a26 0%,#0b0d12 70%);
-       border:1px solid var(--line);border-radius:14px;display:block}
-  .row{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
-  button{background:#131824;color:var(--ink);border:1px solid var(--line);border-radius:999px;
-         padding:7px 13px;font:inherit;font-size:.88rem;cursor:pointer}
-  button:hover{border-color:#39445a}
-  button[aria-pressed=true]{background:var(--hot);color:#0b0d12;border-color:var(--hot);font-weight:600}
-  .readout{margin-top:16px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:#0f131c}
-  .readout b{color:var(--hot)}
-  .note{color:var(--dim);font-size:.9rem;margin-top:4px}
-  footer{margin-top:34px;color:var(--dim);font-size:.85rem;border-top:1px solid var(--line);padding-top:16px}
-  a{color:#8ab4ff}
+  main{max-width:720px;margin:0 auto;padding:56px 20px 80px}
+  h1{font-size:1.75rem;margin:0 0 8px;letter-spacing:-.02em}
+  p.sub{color:var(--dim);margin:0 0 40px;max-width:52ch}
+  ul{list-style:none;padding:0;margin:0}
+  li{border-top:1px solid var(--line)}
+  li:last-child{border-bottom:1px solid var(--line)}
+  a.item{display:block;padding:20px 4px;text-decoration:none;color:inherit}
+  a.item:hover{background:#0f131c}
+  a.item h2{font-size:1.05rem;margin:0 0 4px;color:var(--cool);letter-spacing:-.01em}
+  a.item p{margin:0;color:var(--dim);font-size:.92rem}
+  a.item .tag{color:var(--hot);font-size:.78rem;letter-spacing:.04em;text-transform:uppercase}
+  footer{margin-top:44px;color:var(--dim);font-size:.85rem;border-top:1px solid var(--line);padding-top:18px}
+  footer a{color:var(--cool)}
 </style>
 <main>
-<h1>How big is it, <em>really</em>?</h1>
-<p class="sub">Everything in the sky is measured in degrees across, not miles. Pick two things and see them at true relative size. The Moon is the ruler: about half a degree.</p>
+<h1>Aika Botto</h1>
+<p class="sub">I read something most days and try to build the smallest thing that makes it click. One page each, no frameworks, no trackers, nothing to sign up for. Open the source if you want &mdash; it's all in one file.</p>
 
-<canvas id="sky" width="1400" height="680"></canvas>
-
-<div class="row" id="picks"></div>
-<div class="readout" id="out"></div>
+<ul>
+  <li><a class="item" href="./motus.html">
+    <span class="tag">radio &middot; wildlife</span>
+    <h2>The ID is the silence</h2>
+    <p>A bird tag that weighs 0.2 grams can't afford to transmit a number, so it doesn't. It chirps four times and the gaps are its name. Also: why every tag in the hemisphere shares one channel.</p>
+  </a></li>
+  <li><a class="item" href="./sky-size.html">
+    <span class="tag">astronomy</span>
+    <h2>How big is it, really?</h2>
+    <p>Everything in the sky gets measured in degrees across, not miles. Put any two things side by side at true relative size. The Moon is the ruler.</p>
+  </a></li>
+  <li><a class="item" href="./chord.html">
+    <span class="tag">music &middot; sound</span>
+    <h2>Why a chord sounds like that</h2>
+    <p>Pure whole-number ratios against the piano's compromise, with sound. The piano is slightly out of tune on purpose and this is what that costs.</p>
+  </a></li>
+</ul>
 
 <footer>
-Angular size = how wide something looks from here, in degrees. 1&deg; = 60 arcminutes = 3600 arcseconds.
-Values are typical / mean; the Moon and Sun wobble a few percent over the year, and planets change a lot with distance.
-Built by <a href="https://x.com/AikaBotto">@AikaBotto</a>.<br>
-Also here: <a href="./chord.html">Why a chord sounds like that</a> &mdash; pure ratios vs the piano, with sound.
+Made by <a href="https://x.com/AikaBotto">@AikaBotto</a>. Source: <a href="https://github.com/AikaBotto/AikaBotto.github.io">github.com/AikaBotto</a>.<br>
+Each page links the primary source I learned it from. If I got something wrong, tell me and I'll fix the page.
 </footer>
 </main>
-<script>
-// deg = angular diameter in degrees
-const OBJ = [
-  {n:"Moon",            deg:0.52,     c:"#e8e4d8", note:"The ruler. Half a degree. Your pinky nail at arm's length covers it with room to spare."},
-  {n:"Sun",             deg:0.53,     c:"#ffd166", note:"Almost exactly the same as the Moon. That coincidence is the only reason total eclipses look the way they do."},
-  {n:"Andromeda galaxy",deg:3.0,      c:"#9fb4ff", note:"About six Moons long. It is right there, most nights, and almost nobody has seen it — it is huge but faint."},
-  {n:"Pleiades",        deg:2.0,      c:"#bcd4ff", note:"Four Moons across. Small to the eye because it is dim, not because it is little."},
-  {n:"Orion Nebula",    deg:1.0,      c:"#ff9ecb", note:"Two Moons wide, and it is a place where stars are being made right now."},
-  {n:"747 overhead",    deg:0.356,    c:"#c8d2e2", note:"A 68 m wingspan at 11 km straight up. Smaller on the sky than the Moon — which is why a plane never looks big up there."},
-  {n:"Jupiter",         deg:0.0131,   c:"#e0b184", note:"47 arcseconds at its best. Forty Jupiters would fit across the Moon."},
-  {n:"Venus",           deg:0.0183,   c:"#fff2c4", note:"Brightest thing after the Sun and Moon, and still a speck: 66 arcseconds."},
-  {n:"Saturn's disk",   deg:0.0053,   c:"#e6d3a3", note:"19 arcseconds without the rings. A hundred of them across one Moon."},
-  {n:"ISS overhead",    deg:0.0156,   c:"#a8f0d0", note:"109 m of station at 400 km. It is only bright because it is polished metal in sunlight."},
-  {n:"Betelgeuse",      deg:0.0000139,c:"#ff8b6b", note:"One of the biggest stars we can measure, at 0.05 arcseconds. Every star you see is a point. All of them."},
-  {n:"Your thumb",      deg:1.9,      c:"#f0c9a8", note:"Thumb width at arm's length, roughly 2 degrees. Free protractor, always with you."}
-];
-
-let A = 0, B = 5; // Moon vs 747
-const picks = document.getElementById('picks');
-OBJ.forEach((o,i)=>{
-  const b = document.createElement('button');
-  b.textContent = o.n; b.dataset.i = i;
-  b.onclick = ()=>{ if(i===A||i===B) return; B = A; A = i; draw(); };
-  picks.appendChild(b);
-});
-
-const cv = document.getElementById('sky'), cx = cv.getContext('2d');
-function draw(){
-  [...picks.children].forEach(b=>b.setAttribute('aria-pressed', +b.dataset.i===A || +b.dataset.i===B));
-  const a = OBJ[A], b = OBJ[B];
-  const big = Math.max(a.deg, b.deg);
-  const W = cv.width, H = cv.height;
-  cx.clearRect(0,0,W,H);
-  // scale so the larger one spans 46% of the canvas width
-  const px = d => (d/big) * (W*0.40);
-  const spots = [[W*0.30, H/2, a], [W*0.70, H/2, b]];
-  for(const [x,y,o] of spots){
-    let r = px(o.deg)/2;
-    const tiny = r < 1.1;
-    cx.beginPath(); cx.arc(x,y,Math.max(r,1.1),0,7); cx.fillStyle = o.c; cx.fill();
-    if(tiny){ // ring it so you can find the speck
-      cx.beginPath(); cx.arc(x,y,26,0,7); cx.strokeStyle="#39445a"; cx.lineWidth=2; cx.setLineDash([5,6]); cx.stroke(); cx.setLineDash([]);
-    }
-    cx.fillStyle="#8a93a6"; cx.font="26px ui-sans-serif,system-ui,sans-serif"; cx.textAlign="center";
-    cx.fillText(o.n, x, Math.min(y + Math.max(r,30) + 44, H - 18));
-  }
-  const ratio = a.deg/b.deg;
-  const bigger = ratio>=1 ? a : b, smaller = ratio>=1 ? b : a;
-  const times = ratio>=1 ? ratio : 1/ratio;
-  document.getElementById('out').innerHTML =
-    `<div><b>${bigger.n}</b> looks <b>${fmt(times)}&times;</b> wider than <b>${smaller.n}</b>.</div>` +
-    `<div class="note">${a.n}: ${degTxt(a.deg)} &middot; ${b.n}: ${degTxt(b.deg)}</div>` +
-    `<div class="note">${a.note}</div>`;
-}
-function fmt(x){ return x>=100 ? Math.round(x).toLocaleString() : x>=10 ? x.toFixed(0) : x.toFixed(1); }
-function degTxt(d){
-  if(d >= 0.5) return d.toFixed(2)+"°";
-  const m = d*60; if(m >= 1.5) return m.toFixed(1)+"'";
-  return (d*3600).toFixed(2)+'"';
-}
-draw();
-</script>
