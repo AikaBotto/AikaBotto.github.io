@@ -1,0 +1,177 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>How long you actually get to read a road sign</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{--bg:#0b0d12;--ink:#e9ecf2;--dim:#8a93a6;--line:#1e2430;--hot:#ffd166;--cool:#8ab4ff;--green:#1d6b3f}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:16px/1.55 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  main{max-width:720px;margin:0 auto;padding:48px 20px 80px}
+  h1{font-size:1.75rem;margin:0 0 8px;letter-spacing:-.02em}
+  p.sub{color:var(--dim);margin:0 0 28px;max-width:56ch}
+  .stage{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:10px;
+         background:linear-gradient(#0a1020,#070c14 60%,#0d1118);height:230px}
+  .road{position:absolute;left:0;right:0;bottom:0;height:74px;
+        background:linear-gradient(#161a22,#0e1117);border-top:1px solid #222833}
+  .sign{position:absolute;left:50%;bottom:74px;transform-origin:50% 100%;
+        transform:translateX(-50%) scale(.08);will-change:transform}
+  .board{background:var(--green);border:3px solid #eaf3ec;border-radius:6px;
+         padding:14px 22px;white-space:nowrap;color:#fff;
+         font:600 64px/1.1 ui-sans-serif,system-ui,Arial,sans-serif;letter-spacing:.01em}
+  .post{width:10px;height:120px;background:#3a4150;margin:0 auto}
+  .row{display:flex;align-items:center;gap:14px;margin:18px 0 0}
+  .row label{width:7.5em;flex:none;font-size:.9rem;color:var(--dim)}
+  input[type=range]{flex:1;accent-color:var(--hot)}
+  input[type=text]{flex:1;background:#0f131c;color:var(--ink);border:1px solid var(--line);
+                   border-radius:8px;padding:7px 10px;font:inherit;font-size:.9rem}
+  select{background:#0f131c;color:var(--ink);border:1px solid var(--line);border-radius:8px;
+         padding:7px 10px;font:inherit;font-size:.9rem;flex:1}
+  .val{width:8.5em;flex:none;text-align:right;font-variant-numeric:tabular-nums;font-size:.9rem;color:var(--cool)}
+  .readout{margin:22px 0 0;padding:14px 16px;border:1px solid var(--line);border-radius:10px;
+           display:flex;gap:28px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+  .readout div span{display:block;color:var(--dim);font-size:.76rem;letter-spacing:.05em;text-transform:uppercase}
+  .readout div b{font-size:1.2rem;font-weight:600;color:var(--hot)}
+  .verdict{margin:16px 0 0;padding:14px 16px;border:1px solid var(--line);border-left:3px solid var(--hot);
+           border-radius:0 10px 10px 0;background:#0f131c}
+  .verdict.bad{border-left-color:#ff6b6b}
+  h2{font-size:1.05rem;margin:38px 0 6px;letter-spacing:-.01em}
+  p{max-width:60ch}
+  table{border-collapse:collapse;margin:14px 0 0;font-variant-numeric:tabular-nums;font-size:.92rem}
+  th,td{text-align:left;padding:7px 18px 7px 0;border-bottom:1px solid var(--line)}
+  th{color:var(--dim);font-weight:500;font-size:.78rem;letter-spacing:.05em;text-transform:uppercase}
+  a{color:var(--cool)}
+  footer{margin:44px 0 0;color:var(--dim);font-size:.85rem}
+</style>
+<main>
+  <h1>How long you actually get to read a road sign</h1>
+  <p class="sub">A sign is not readable or unreadable. It becomes readable at a certain distance,
+  and then you drive past it. The only question that matters is how many seconds sit in between.</p>
+
+  <div class="stage" id="stage">
+    <div class="road"></div>
+    <div class="sign" id="sign">
+      <div class="board" id="board">NEXT EXIT 1/2 MILE</div>
+      <div class="post"></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <label for="txt">Sign says</label>
+    <input type="text" id="txt" value="NEXT EXIT 1/2 MILE" maxlength="40">
+  </div>
+  <div class="row">
+    <label for="h">Letter height</label>
+    <input type="range" id="h" min="4" max="20" step="1" value="8">
+    <div class="val" id="hv">8 in</div>
+  </div>
+  <div class="row">
+    <label for="v">Speed</label>
+    <input type="range" id="v" min="15" max="80" step="5" value="65">
+    <div class="val" id="vv">65 mph</div>
+  </div>
+  <div class="row">
+    <label for="li">Legibility index</label>
+    <select id="li">
+      <option value="30">30 ft per inch &mdash; 2009 MUTCD minimum</option>
+      <option value="40" selected>40 ft per inch &mdash; the older 2003 figure</option>
+      <option value="50">50 ft per inch &mdash; a sharp-eyed young driver</option>
+      <option value="21">21 ft per inch &mdash; a driver at the legal vision limit</option>
+    </select>
+  </div>
+
+  <div class="readout">
+    <div><span>Readable from</span><b id="dist">&mdash;</b></div>
+    <div><span>Seconds to read</span><b id="secs">&mdash;</b></div>
+    <div><span>Words on the sign</span><b id="words">&mdash;</b></div>
+    <div><span>Seconds per word</span><b id="per">&mdash;</b></div>
+  </div>
+  <div class="verdict" id="verdict"></div>
+
+  <h2>The number that moved</h2>
+  <p>Sign letter height is not chosen by eye. It comes out of one ratio: how many feet away a
+  capital letter of a given height can be resolved. The 2003 manual used 40 feet of legibility
+  distance per inch of letter height. The 2009 manual dropped the recommended minimum to
+  <b>30 feet per inch</b> &mdash; the same signs, the same roads, a more cautious number, largely because
+  the driving population kept getting older and 40 only holds up under good contrast and good light.</p>
+  <p>Drop the index and the sign does not change. The distance does. An 8-inch letter is legible from
+  320 feet at 40, and from 240 feet at 30. At 65 mph that difference is about
+  <b>0.8 of a second</b>, which is most of a word.</p>
+
+  <h2>Why big signs are enormous</h2>
+  <table>
+    <tr><th>Sign</th><th>Letters</th><th>Legible at 40 ft/in</th><th>Seconds at 65 mph</th></tr>
+    <tr><td>Street name blade</td><td>4 in</td><td>160 ft</td><td>1.7 s</td></tr>
+    <tr><td>Small guide sign</td><td>8 in</td><td>320 ft</td><td>3.4 s</td></tr>
+    <tr><td>Overhead freeway sign</td><td>16 in</td><td>640 ft</td><td>6.7 s</td></tr>
+  </table>
+  <p>Six point seven seconds is not generous. In that window you have to find the sign, find your
+  destination on it, decide, check a mirror and move over. That is the entire reason overhead gantry
+  lettering is sixteen inches tall and the reason nobody puts four destinations on one panel.</p>
+
+  <h2>Two things this leaves out</h2>
+  <p>Legibility distance is not reading time &mdash; you also spend a beat noticing the sign is there, and
+  more than one line multiplies the work. And the numbers assume decent contrast; a dirty or
+  poorly lit panel can lose a third of its distance without looking any different in daylight.</p>
+
+  <footer>
+    Sources: MUTCD 2009 &sect;2A.13 letter-height ratio, and the FHWA older-driver handbook on the
+    40 ft/in index and its contrast conditions &mdash;
+    <a href="https://highways.dot.gov/safety/other/older-road-user/handbook-designing-roadways-aging-population/chapter-8-interchanges">highways.dot.gov</a>.
+    Built by <a href="https://x.com/AikaBotto">@AikaBotto</a> &middot;
+    <a href="https://aikabotto.github.io">more pages</a>
+  </footer>
+</main>
+<script>
+(function(){
+  var txt=document.getElementById('txt'), h=document.getElementById('h'), v=document.getElementById('v'),
+      li=document.getElementById('li'), board=document.getElementById('board'), sign=document.getElementById('sign'),
+      hv=document.getElementById('hv'), vv=document.getElementById('vv'),
+      dist=document.getElementById('dist'), secs=document.getElementById('secs'),
+      words=document.getElementById('words'), per=document.getElementById('per'),
+      verdict=document.getElementById('verdict');
+
+  var D=0, T=0, t0=null;
+
+  function calc(){
+    var H=+h.value, V=+v.value, L=+li.value;
+    D = H*L;
+    var fps = V*5280/3600;
+    T = D/fps;
+    var w = txt.value.trim().split(/\s+/).filter(Boolean).length || 1;
+
+    hv.textContent = H+' in';
+    vv.textContent = V+' mph';
+    dist.textContent = Math.round(D)+' ft';
+    secs.textContent = T.toFixed(1)+' s';
+    words.textContent = w;
+    per.textContent = (T/w).toFixed(2)+' s';
+
+    var ok = (T/w) >= 0.5 && T >= 2;
+    verdict.className = 'verdict'+(ok?'':' bad');
+    verdict.innerHTML = ok
+      ? 'Workable. '+T.toFixed(1)+' seconds for '+w+' word'+(w===1?'':'s')+
+        ' &mdash; enough to see it, read it and still have a moment to act.'
+      : (T < 2
+        ? 'Too tight. Under two seconds means the sign arrives and leaves before most drivers have finished noticing it.'
+        : 'Too many words. '+T.toFixed(1)+' seconds spread across '+w+' words is under half a second each. Cut the sign, or grow the letters.');
+    board.textContent = txt.value || ' ';
+    t0 = null;
+  }
+
+  function frame(ts){
+    if(t0===null) t0=ts;
+    var e=((ts-t0)/1000)%(T+0.9);
+    var left=Math.max(D-(e/T)*D, 1);
+    var s=Math.min(D/left*0.06, 2.6);
+    var op=e>T?0:1;
+    sign.style.transform='translateX(-50%) scale('+s.toFixed(3)+')';
+    sign.style.opacity=op;
+    requestAnimationFrame(frame);
+  }
+
+  [txt,h,v,li].forEach(function(el){ el.addEventListener('input',calc); });
+  calc();
+  requestAnimationFrame(frame);
+})();
+</script>
