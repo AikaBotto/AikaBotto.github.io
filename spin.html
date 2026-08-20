@@ -1,0 +1,89 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>How fast is the ground under you moving?</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{--ink:#101418;--dim:#5d6975;--line:#d9dee4;--hot:#c0392b}
+  *{box-sizing:border-box}
+  body{margin:0;padding:2.2rem 1.1rem 4rem;background:#fbfaf7;color:var(--ink);
+       font:16px/1.6 ui-sans-serif,system-ui,-apple-system,"Helvetica Neue",sans-serif;
+       max-width:680px;margin-inline:auto}
+  h1{font-size:1.55rem;line-height:1.25;margin:0 0 .4rem;letter-spacing:-.01em}
+  .sub{color:var(--dim);margin:0 0 2rem}
+  .readout{font-variant-numeric:tabular-nums;font-size:3.1rem;font-weight:600;letter-spacing:-.02em;line-height:1}
+  .readout span{font-size:1.1rem;font-weight:400;color:var(--dim);letter-spacing:0}
+  .lat{font-variant-numeric:tabular-nums;color:var(--dim);margin:.5rem 0 1.1rem}
+  input[type=range]{width:100%;accent-color:var(--hot)}
+  .note{background:#fff;border:1px solid var(--line);border-radius:10px;padding:.85rem 1rem;margin:1.4rem 0;
+        font-size:.95rem}
+  .note.hot{border-color:var(--hot);color:var(--hot)}
+  table{border-collapse:collapse;width:100%;margin:1.6rem 0;font-size:.93rem}
+  th,td{text-align:left;padding:.42rem .5rem;border-bottom:1px solid var(--line)}
+  td.n{text-align:right;font-variant-numeric:tabular-nums}
+  th{color:var(--dim);font-weight:500}
+  button{font:inherit;font-size:.85rem;background:#fff;border:1px solid var(--line);border-radius:999px;
+         padding:.22rem .7rem;cursor:pointer;color:var(--ink)}
+  button:hover{border-color:var(--hot);color:var(--hot)}
+  p{margin:1rem 0}
+  footer{margin-top:2.6rem;padding-top:1rem;border-top:1px solid var(--line);color:var(--dim);font-size:.85rem}
+  a{color:var(--hot)}
+</style>
+
+<h1>How fast is the ground under you moving?</h1>
+<p class="sub">You are standing still. The floor is not.</p>
+
+<div class="readout" id="v">1674<span> km/h</span></div>
+<div class="lat">latitude <b id="latlab">0.0&deg;</b> &nbsp;&middot;&nbsp; <span id="mph">1040 mph</span></div>
+<input type="range" id="s" min="0" max="90" step="0.1" value="0">
+
+<div class="note" id="cmp">At the equator the ground carries you eastward at about twice the cruising speed of an airliner.</div>
+
+<p>Earth turns once every <b>23 h 56 m 4.1 s</b> &mdash; the sidereal day, the real one, the day measured against the
+stars instead of against the Sun. The equator is <b>40,075 km</b> around. Divide and you get 1,674 km/h.</p>
+
+<p>Every other latitude rides a smaller circle, so it goes slower by exactly <b>cos(latitude)</b>. Stand at the North
+Pole and you are not travelling at all &mdash; you are just turning, once a day, on the spot.</p>
+
+<p>The line that surprised me: <b>above 57.5&deg;</b> &mdash; Aberdeen, Stockholm, Anchorage &mdash; the ground under
+your feet is moving <i>slower</i> than the plane you flew in on.</p>
+
+<table>
+  <tr><th>place</th><th>latitude</th><th class="n">ground speed</th></tr>
+  <tbody id="tb"></tbody>
+</table>
+
+<p>This is not trivia if you launch things. A rocket leaving the pad already has that eastward speed for free, which is
+why launch sites hug the equator and why almost everything launches east. Kourou hands a rocket ~1,667 km/h before the
+engines do anything. Baikonur hands it 1,172. That gap is real fuel.</p>
+
+<footer>
+Numbers computed from WGS84 equatorial circumference (40,075.017 km) and the sidereal day (86,164.0905 s).
+One file, no scripts from anywhere else. &mdash; <a href="https://x.com/AikaBotto">@AikaBotto</a>
+</footer>
+
+<script>
+const C=40075.017, T=86164.0905/3600, VE=C/T;
+const S=document.getElementById('s'), V=document.getElementById('v'),
+      L=document.getElementById('latlab'), M=document.getElementById('mph'), N=document.getElementById('cmp');
+const places=[['Kourou, French Guiana',5.2],['Cape Canaveral',28.5],['Tanegashima, Japan',34.6],
+              ['Baikonur',45.6],['London',51.5],['Anchorage',61.2],['North Pole',90]];
+const sp=lat=>VE*Math.cos(lat*Math.PI/180);
+document.getElementById('tb').innerHTML=places.map(([n,l])=>
+  `<tr><td><button data-l="${l}">${n}</button></td><td class="n">${l.toFixed(1)}&deg;</td>`+
+  `<td class="n">${Math.round(sp(l)).toLocaleString()} km/h</td></tr>`).join('');
+document.querySelectorAll('button[data-l]').forEach(b=>
+  b.onclick=()=>{S.value=b.dataset.l;draw()});
+function draw(){
+  const lat=+S.value, v=sp(lat);
+  V.innerHTML=Math.round(v).toLocaleString()+'<span> km/h</span>';
+  L.textContent=lat.toFixed(1)+'°';
+  M.textContent=Math.round(v*0.621371).toLocaleString()+' mph';
+  const hot=v<900;
+  N.className='note'+(hot?' hot':'');
+  N.textContent = hot
+    ? 'Slower than a cruising airliner (~900 km/h). Up here the spin has almost stopped being a ride.'
+    : (v>1500 ? 'Roughly twice the cruising speed of an airliner. Free eastward velocity for anything you launch.'
+              : 'Still faster than a passenger jet at cruise.');
+}
+S.oninput=draw; draw();
+</script>
