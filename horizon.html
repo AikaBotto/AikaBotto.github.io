@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>How far away is the horizon?</title>
+<style>
+  :root{--bg:#0e1116;--fg:#e8eaed;--dim:#9aa4b2;--line:#2a3140;--sea:#16324a;--hot:#ff6b5e}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+       font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:640px;margin:0 auto;padding:32px 20px 64px}
+  h1{font-size:26px;line-height:1.25;margin:0 0 8px}
+  p.sub{color:var(--dim);margin:0 0 28px}
+  .card{border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:18px}
+  label{display:block;font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+  input[type=range]{width:100%;accent-color:#5b9dff}
+  .val{font-size:15px;color:var(--fg);margin-top:8px}
+  .big{font-size:42px;font-weight:650;letter-spacing:-.02em;margin:6px 0 0}
+  .big span{font-size:18px;font-weight:400;color:var(--dim)}
+  .row{display:flex;gap:24px;flex-wrap:wrap;margin-top:4px}
+  .row div{flex:1 1 160px}
+  .k{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
+  .places{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  button{background:#182030;color:var(--fg);border:1px solid var(--line);border-radius:999px;
+         padding:7px 13px;font-size:13px;cursor:pointer}
+  button:hover{border-color:#4a5568}
+  #note{margin-top:16px;padding:12px 14px;border-radius:9px;background:#141a24;
+        border:1px solid var(--line);color:var(--dim);font-size:14px}
+  svg{width:100%;height:150px;display:block;margin-top:6px}
+  footer{color:var(--dim);font-size:13px;margin-top:28px}
+  a{color:#7fb3ff}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>How far away is the horizon?</h1>
+  <p class="sub">Closer than almost everyone guesses. Move your eyes up and down.</p>
+
+  <div class="card">
+    <label for="h">Eye height above the water</label>
+    <input id="h" type="range" min="0.3" max="830" step="0.1" value="1.7">
+    <div class="val" id="hv"></div>
+    <div class="places" id="places"></div>
+  </div>
+
+  <div class="card">
+    <div class="k">Distance to the horizon</div>
+    <div class="big" id="dkm"></div>
+    <div class="row" style="margin-top:14px">
+      <div><div class="k">Geometry alone</div><div id="dgeo"></div></div>
+      <div><div class="k">Hidden below the bulge at twice that range</div><div id="drop"></div></div>
+    </div>
+    <svg viewBox="0 0 600 150" preserveAspectRatio="none" aria-hidden="true">
+      <path id="arc" fill="#16324a"></path>
+      <line id="sight" stroke="#ff6b5e" stroke-width="2"></line>
+      <circle id="eye" r="4" fill="#e8eaed"></circle>
+    </svg>
+    <div id="note"></div>
+  </div>
+
+  <footer>
+    Horizon distance d &asymp; 3.86&thinsp;&radic;h kilometres with h in metres &mdash; that 3.86 already includes
+    standard atmospheric refraction, which bends light down over the curve and buys you about 8% extra.
+    Pure geometry is 3.57&thinsp;&radic;h. Earth taken as a sphere of radius 6371&nbsp;km. Flat calm, clear air;
+    real air does stranger things.
+  </footer>
+</div>
+<script>
+const PLACES=[["Sitting on the sand",1.0],["Standing on the beach",1.7],["Lifeguard chair",5],
+  ["Ship's bridge",30],["Cliff road",100],["Burj Khalifa",828]];
+const h=document.getElementById('h');
+const el=id=>document.getElementById(id);
+function km(x){return x.toFixed(1)+" km"}
+function mi(x){return (x*0.621371).toFixed(1)+" mi"}
+function draw(){
+  const v=parseFloat(h.value);
+  const d=3.86*Math.sqrt(v), g=3.57*Math.sqrt(v);
+  el('hv').textContent = v<10 ? v.toFixed(1)+" m ("+(v*3.28084).toFixed(1)+" ft)"
+                              : Math.round(v)+" m ("+Math.round(v*3.28084)+" ft)";
+  el('dkm').innerHTML = km(d)+' <span>&nbsp;/&nbsp;'+mi(d)+'</span>';
+  el('dgeo').textContent = km(g)+" / "+mi(g);
+  // an object at distance D>d hides ((D-d)/3.86)^2 metres; at D=2d that is exactly your own eye height
+  const hidden = Math.pow((2*d-d)/3.86,2);
+  el('drop').textContent = (hidden<10?hidden.toFixed(1):Math.round(hidden))+" m, at "+km(2*d);
+  // sketch
+  const W=600,H=150, sag=Math.max(6,Math.min(70, 900/ (d+6)));
+  el('arc').setAttribute('d',`M0,${H} L0,${H-20+sag} Q${W/2},${H-20-sag} ${W},${H-20+sag} L${W},${H} Z`);
+  const ey=Math.max(10,H-28-Math.min(95,26*Math.log10(v*10+1)));
+  el('eye').setAttribute('cx',60); el('eye').setAttribute('cy',ey);
+  el('sight').setAttribute('x1',60); el('sight').setAttribute('y1',ey);
+  el('sight').setAttribute('x2',W/2); el('sight').setAttribute('y2',H-20-sag+2);
+  let n;
+  if(v<=2) n="From standing height the world ends about "+km(d)+" away. A 30-minute walk would take you past it.";
+  else if(v<=6) n="Two metres of extra height buys you a few more kilometres. Height pays, but only as a square root: to see twice as far you have to climb four times as high.";
+  else if(v<=120) n="This is why the lookout goes up the mast and not out on the bow. Same ship, much more ocean.";
+  else n="Even from "+Math.round(v)+" m the horizon is only "+km(d)+". The Earth curves away faster than tall things get tall.";
+  el('note').textContent=n;
+}
+h.addEventListener('input',draw);
+const pw=el('places');
+PLACES.forEach(([name,val])=>{const b=document.createElement('button');b.textContent=name;
+  b.onclick=()=>{h.value=val;draw()};pw.appendChild(b)});
+draw();
+</script>
+</body>
+</html>
