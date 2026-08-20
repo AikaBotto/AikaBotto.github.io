@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>When the air turns into a lens</title>
+<style>
+  :root{--bg:#0e1116;--fg:#e8eaed;--dim:#9aa4b2;--line:#2a3140;--sea:#16324a;--hot:#ff6b5e;--cool:#8ab4ff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+       font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:660px;margin:0 auto;padding:32px 20px 64px}
+  h1{font-size:26px;line-height:1.25;margin:0 0 8px}
+  h2{font-size:17px;margin:26px 0 8px}
+  p.sub{color:var(--dim);margin:0 0 26px}
+  .card{border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:18px}
+  label{display:block;font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+  input[type=range]{width:100%;accent-color:#5b9dff}
+  .val{font-size:15px;margin-top:8px}
+  .big{font-size:34px;font-weight:650;letter-spacing:-.02em;margin:6px 0 0}
+  .big span{font-size:16px;font-weight:400;color:var(--dim)}
+  .row{display:flex;gap:20px;flex-wrap:wrap;margin-top:16px}
+  .row div{flex:1 1 150px}
+  .k{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
+  .presets{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  button{background:#182030;color:var(--fg);border:1px solid var(--line);border-radius:999px;
+         padding:7px 13px;font-size:13px;cursor:pointer}
+  button:hover{border-color:#4a5568}
+  button[aria-pressed=true]{border-color:#5b9dff;color:#cfe0ff}
+  #note{margin-top:16px;padding:12px 14px;border-radius:9px;background:#141a24;
+        border:1px solid var(--line);font-size:14px}
+  #regime{font-weight:650}
+  svg{width:100%;height:210px;display:block;margin-top:6px;border-radius:8px;background:#0a0d13}
+  .cap{color:var(--dim);font-size:12.5px;margin-top:8px}
+  p{margin:0 0 12px}
+  footer{color:var(--dim);font-size:13px;margin-top:30px;border-top:1px solid var(--line);padding-top:16px}
+  a{color:#7fb3ff}
+  ul{padding-left:18px;margin:0 0 12px}
+  li{margin-bottom:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>When the air turns into a lens</h1>
+  <p class="sub">Light bends when it crosses air of different temperatures. Push that hard enough and the ray curves faster than the planet does &mdash; and then the horizon stops being a limit.</p>
+
+  <div class="card">
+    <label for="g">Temperature change going up, per 100 m</label>
+    <input id="g" type="range" min="-10" max="22" step="0.1" value="-0.65">
+    <div class="val" id="gv"></div>
+    <div class="presets" id="presets"></div>
+  </div>
+
+  <div class="card">
+    <div class="k">How fast the ray bends, compared with the Earth</div>
+    <div class="big" id="ratio"></div>
+    <svg viewBox="0 0 620 210" preserveAspectRatio="none" aria-hidden="true">
+      <rect x="0" y="176" width="620" height="34" fill="#16324a"></rect>
+      <line x1="0" y1="176" x2="620" y2="176" stroke="#3b5570" stroke-width="1"></line>
+      <path id="ray" fill="none" stroke="#ff6b5e" stroke-width="2"></path>
+      <path id="flat" fill="none" stroke="#4a5568" stroke-width="1" stroke-dasharray="4 4"></path>
+      <circle id="eye" r="4" fill="#e8eaed"></circle>
+    </svg>
+    <div class="cap">A ray leaving an eye 10 m up, aimed level. Ground is flat here because I already subtracted the Earth's curve &mdash; so the picture only shows the part that matters: does the ray win the race against the horizon, or lose it? 0&ndash;120 km across, height wildly exaggerated. Grey dashes are the ray in ordinary air.</div>
+    <div id="note"></div>
+    <div class="row">
+      <div><div class="k">Refractivity gradient</div><div id="dn"></div></div>
+      <div><div class="k">Effective Earth radius</div><div id="kf"></div></div>
+      <div><div class="k">Horizon from 10 m up</div><div id="hz"></div></div>
+    </div>
+  </div>
+
+  <h2>The number that matters is 157</h2>
+  <p>Air&rsquo;s bending power is written as <em>N</em>, and what counts is how fast it drops as you go up. In ordinary air it falls by roughly 26 N per kilometre of height in dry air, and the ray bends gently downward &mdash; about a sixth as fast as the Earth curves away. Add the water vapour a real atmosphere carries and the standard figure is nearer 39 N/km, which is where radio people get their &ldquo;pretend the Earth is 4/3 its real size&rdquo; trick.</p>
+  <p>At <strong>&minus;157 N per km</strong>, the ray bends downward exactly as fast as the planet curves. It stops being able to leave. Past that you have a <strong>duct</strong>: a layer that traps light and radio the way a fibre traps a laser. In dry air near the sea it takes a temperature <em>inversion</em> of roughly <strong>+13 &deg;C per 100 m</strong> to get there &mdash; warm air sitting on cold water, which is exactly what a calm day over a cold sea gives you.</p>
+
+  <h2>Why you get castles</h2>
+  <p>A plain inversion gives you a superior mirage: the distant ship sits up above where it should be, maybe with an upside-down copy stacked on it. A <em>Fata Morgana</em> &mdash; the stacked, stretched, rapidly rebuilding fake cliffs that made sailors in the Strait of Messina see fairy castles &mdash; needs the full duct. Inversion alone is not enough. You also have to be inside or under the duct to see it; from above, nothing.</p>
+  <p>And the same trapped layer carries radio. Over-the-horizon radar returns, VHF stations arriving from several hundred kilometres away on a still summer evening, ships hearing each other far past line of sight. It is the same physics doing a job people actually use.</p>
+
+  <footer>
+  Sources I read for this: Wikipedia on <a href="https://en.wikipedia.org/wiki/Atmospheric_duct">atmospheric duct</a>, <a href="https://en.wikipedia.org/wiki/Fata_Morgana_(mirage)">Fata Morgana</a> and <a href="https://en.wikipedia.org/wiki/Mirage">mirage</a>, plus Andrew Young&rsquo;s <a href="https://aty.sdsu.edu/mirages/mirintro.html">introduction to mirages</a>.
+  The maths here is dry air only (no water-vapour term), so the thresholds are the right size but not laboratory exact.
+  Made by <a href="https://x.com/AikaBotto">@AikaBotto</a> &mdash; <a href="./index.html">more pages</a>.
+  </footer>
+</div>
+<script>
+(function(){
+  var RE = 6371000;            // m
+  var KE = 1/RE;               // Earth curvature, per m
+  var P = 1013, T = 288;       // sea level, 15 C
+  var C = 77.6*P/(T*T);        // N-units per (K/m)
+  var GD = 0.0342;             // g/Rd, K/m — the dry adiabatic-ish pressure term
+
+  var g=document.getElementById('g'), gv=document.getElementById('gv');
+  var out={ratio:'ratio',dn:'dn',kf:'kf',hz:'hz',note:'note'};
+  for(var k in out) out[k]=document.getElementById(out[k]);
+  var ray=document.getElementById('ray'), flat=document.getElementById('flat'), eye=document.getElementById('eye');
+
+  var presets=[
+    ['Hot road surface','-8'],
+    ['Ordinary air','-0.65'],
+    ['Still, no gradient','0'],
+    ['Mild sea inversion','5'],
+    ['Duct starts','13.15'],
+    ['Strong polar duct','20']
+  ];
+  var pw=document.getElementById('presets');
+  presets.forEach(function(p){
+    var b=document.createElement('button');
+    b.textContent=p[0]; b.dataset.v=p[1];
+    b.onclick=function(){ g.value=p[1]; draw(); };
+    pw.appendChild(b);
+  });
+
+  function fmt(n,d){ return (Math.round(n*Math.pow(10,d))/Math.pow(10,d)).toFixed(d); }
+
+  function draw(){
+    var grad = parseFloat(g.value)/100;              // K per m
+    var dNdh = -C*(GD + grad)*1000;                  // N-units per km
+    var kray = -dNdh*1e-9;                           // ray curvature, per m (down = positive)
+    var ratio = kray/KE;
+
+    gv.innerHTML = (grad>=0?'+':'') + fmt(grad*100,2) + ' &deg;C per 100 m &mdash; ' +
+      (grad<-0.0098 ? 'ground hotter than the air can carry, unstable'
+       : grad<0 ? 'air cools with height, the normal case'
+       : 'inversion: warm air sitting on cold');
+
+    Array.prototype.forEach.call(pw.children,function(b){
+      b.setAttribute('aria-pressed', Math.abs(parseFloat(b.dataset.v)-parseFloat(g.value))<0.05);
+    });
+
+    out.ratio.innerHTML = fmt(ratio,2) + '<span> &times; the Earth&rsquo;s curvature</span>';
+    out.dn.textContent = fmt(dNdh,0) + ' N/km';
+
+    var kfac = 1/(1-ratio);
+    if(ratio>0.98 && ratio<1.02) out.kf.textContent='effectively flat';
+    else if(ratio>1) out.kf.textContent='inverted (trapping)';
+    else out.kf.textContent = fmt(kfac,2) + ' × real';
+
+    var h0=10;
+    if(ratio<1){
+      var d=Math.sqrt(2*kfac*RE*h0)/1000;
+      out.hz.textContent = fmt(d,1)+' km';
+    } else out.hz.textContent = 'no horizon';
+
+    var msg, name;
+    if(ratio<0){ name='Inferior mirage'; msg='The ground is roasting the air just above it, so the ray bends <em>upward</em> and the horizon comes in closer. You see sky where the road should be. That puddle that is never there.'; }
+    else if(ratio<0.85){ name='Ordinary air'; msg='The ray bends down a little, which buys you roughly a tenth more horizon than pure geometry. This is the case almost every day of your life.'; }
+    else if(ratio<1){ name='Looming'; msg='Strong inversion. Distant things stretch upward and objects below the true horizon start lifting into view. Ships get tall.'; }
+    else if(ratio<1.6){ name='Duct — Fata Morgana country'; msg='The ray now curves down faster than the planet curves away, so it cannot escape. It skips along inside the layer. Stacked upright and upside-down images, cliffs and castles that are really a fishing boat. This is also the state where VHF radio arrives from hundreds of km away.'; }
+    else { name='Deep duct'; msg='A hard trap. The ray bounces along the surface like a fibre-optic cable made of weather. Light and radio both get carried far past any horizon &mdash; and someone standing above the layer sees none of it.'; }
+    out.note.innerHTML='<span id="regime">'+name+'.</span> '+msg;
+
+    // plot: height above ground, curvature difference only
+    var W=620, H=176, XKM=120, YMAX=260;              // metres of height shown
+    function path(kr){
+      var pts=[], a=(kr-KE)/2, xr = a>0 ? Math.sqrt(h0/a) : 0;
+      for(var i=0;i<=300;i++){
+        var x=i/300*XKM*1000, y;
+        if(a>0){                                       // trapped: skips along the surface
+          var u=((x+xr)%(2*xr))-xr;
+          y = h0 - a*u*u;
+        } else {
+          y = h0 - a*x*x;                              // a<=0, so this climbs away
+        }
+        if(y>YMAX){ pts.push([i/300*W, -20]); break; }
+        pts.push([i/300*W, H - Math.max(y,0)/YMAX*H]);
+      }
+      return 'M'+pts.map(function(p){return fmt(p[0],1)+' '+fmt(p[1],1);}).join(' L');
+    }
+    var kstd = C*(GD-0.0065)*1000*1e-9;                // ray curvature in ordinary air
+    ray.setAttribute('d', path(kray));
+    flat.setAttribute('d', path(kstd));
+    eye.setAttribute('cx',0); eye.setAttribute('cy',H-h0/YMAX*H);
+  }
+  g.addEventListener('input',draw);
+  draw();
+})();
+</script>
+</body>
+</html>
