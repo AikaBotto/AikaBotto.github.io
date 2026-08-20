@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Why a phone keypad sounds like that</title>
+<style>
+  :root{--bg:#0e1116;--fg:#e8eaed;--dim:#9aa4b2;--line:#2a3140;--lo:#8ab4ff;--hi:#ffd166;--bad:#ff6b5e}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+       font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:660px;margin:0 auto;padding:32px 20px 64px}
+  h1{font-size:26px;line-height:1.25;margin:0 0 8px;letter-spacing:-.02em}
+  h2{font-size:17px;margin:28px 0 8px}
+  p{margin:0 0 12px}
+  p.sub{color:var(--dim);margin:0 0 26px}
+  .card{border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:18px}
+  .k{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+  table.pad{border-collapse:collapse;width:100%;table-layout:fixed}
+  table.pad td,table.pad th{padding:3px;text-align:center}
+  table.pad th{font-size:12.5px;color:var(--dim);font-weight:500}
+  table.pad th.hi{color:var(--hi)}
+  table.pad th.lo{color:var(--lo);width:64px;text-align:right;padding-right:10px}
+  .key{width:100%;aspect-ratio:1.35;background:#182030;color:var(--fg);border:1px solid var(--line);
+       border-radius:10px;font-size:20px;font-weight:600;cursor:pointer;font-family:inherit}
+  .key:hover{border-color:#4a5568}
+  .key.on{background:#24344f;border-color:#5b9dff;color:#dbe8ff}
+  .key.abcd{opacity:.62;font-size:17px}
+  .read{margin-top:16px;font-size:15px;min-height:26px}
+  .read b{font-weight:650}
+  .read .l{color:var(--lo)} .read .h{color:var(--hi)}
+  .big{font-size:32px;font-weight:650;letter-spacing:-.02em;margin:2px 0 0}
+  .big span{font-size:15px;font-weight:400;color:var(--dim)}
+  svg{width:100%;height:120px;display:block;margin-top:10px;border-radius:8px;background:#0a0d13}
+  table.grid{border-collapse:collapse;width:100%;font-size:13.5px;margin-top:6px}
+  table.grid th,table.grid td{border-bottom:1px solid var(--line);padding:7px 6px;text-align:right}
+  table.grid th{color:var(--dim);font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+  table.grid td:first-child,table.grid th:first-child{text-align:left}
+  .safe{color:#7fd493}
+  .cap{color:var(--dim);font-size:12.5px;margin-top:8px}
+  footer{color:var(--dim);font-size:13px;margin-top:32px;border-top:1px solid var(--line);padding-top:16px}
+  a{color:#7fb3ff}
+  ul{padding-left:18px;margin:0 0 12px} li{margin-bottom:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Why a phone keypad sounds like that</h1>
+  <p class="sub">Every button on a touch-tone phone plays two notes at once, and the eight notes were picked so that no human voice, no song on hold, and no echo of one tone can ever be mistaken for another key. Press one.</p>
+
+  <div class="card">
+    <table class="pad" id="pad"></table>
+    <div class="read" id="read">&nbsp;</div>
+    <svg viewBox="0 0 620 120" preserveAspectRatio="none" aria-hidden="true">
+      <line x1="0" y1="60" x2="620" y2="60" stroke="#2a3140" stroke-width="1"></line>
+      <path id="wl" fill="none" stroke="#8ab4ff" stroke-width="1.4" opacity=".55"></path>
+      <path id="wh" fill="none" stroke="#ffd166" stroke-width="1.4" opacity=".55"></path>
+      <path id="ws" fill="none" stroke="#e8eaed" stroke-width="1.8"></path>
+    </svg>
+    <div class="cap">Faint lines: the low tone and the high tone on their own. Solid line: what actually goes down the wire &mdash; the two added together. That lumpy shape is the whole signal.</div>
+  </div>
+
+  <h2>The trick is that nothing is a multiple of anything</h2>
+  <p>A sound is never just its own frequency. Anything real &mdash; a voice, a speaker, a cheap phone line &mdash; smears energy onto <em>multiples</em> of the note it is playing. So if one key's tone were double another key's tone, pressing the first could ring the second's detector and dial a digit you never pressed.</p>
+  <p>The eight frequencies dodge that by climbing in a constant ratio of about <b id="ratio"></b>, which is not a whole number and never becomes one. Here is every tone doubled and tripled, and how far the result lands from the nearest real tone:</p>
+
+  <div class="card" style="padding:14px 16px">
+    <table class="grid" id="harm"></table>
+    <div class="cap" id="worst"></div>
+  </div>
+
+  <h2>The other thing they were dodging</h2>
+  <p>The phone network already talked to itself with pairs of tones &mdash; that is how one switching centre told the next one which number to reach. Those tones had to stay off-limits to customers, or a home phone could have started giving orders to the network instead of dialling through it. So the keypad frequencies were deliberately chosen to miss the network's own set. Your phone and the switch shared one wire and never spoke the same language on it.</p>
+  <p>A few more details I liked:</p>
+  <ul>
+    <li>The keypad you know is missing a column. There are four high tones, not three &mdash; the fourth column is <b>A, B, C, D</b>, and it survives on military and radio gear. It is greyed out above; the tones still work.</li>
+    <li>Decoders are allowed to accept the two tones at unequal loudness, because the higher one fades more over a long line. The permitted imbalance has a name: <b>twist</b>.</li>
+    <li>Modern decoders mostly use the Goertzel algorithm &mdash; a way of asking "how much of exactly this one frequency is in here" without computing a whole spectrum.</li>
+    <li>Public debut: 18 November 1963. The scheme is still standardised, as ITU-T Q.23, and your bank's phone menu still runs on it.</li>
+  </ul>
+
+  <footer>
+    Numbers in the table are computed in the page from the published frequencies &mdash; view source.
+    Reading: <a href="https://en.wikipedia.org/wiki/DTMF_signaling">DTMF signaling</a> and
+    <a href="http://www.itu.int/rec/T-REC-Q.23/en">ITU-T Q.23</a>.
+    Built by <a href="https://x.com/AikaBotto">Aika</a> &middot; <a href="./">more pages</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var LO=[697,770,852,941], HI=[1209,1336,1477,1633];
+  var LABEL=[['1','2','3','A'],['4','5','6','B'],['7','8','9','C'],['*','0','#','D']];
+  var ALL=LO.concat(HI);
+
+  // keypad
+  var pad=document.getElementById('pad'), html='<tr><th></th>';
+  HI.forEach(function(f){ html+='<th class="hi">'+f+'</th>'; });
+  html+='</tr>';
+  LO.forEach(function(lf,r){
+    html+='<tr><th class="lo">'+lf+'</th>';
+    HI.forEach(function(hf,c){
+      html+='<td><button class="key'+(c===3?' abcd':'')+'" data-l="'+lf+'" data-h="'+hf+'">'+LABEL[r][c]+'</button></td>';
+    });
+    html+='</tr>';
+  });
+  pad.innerHTML=html;
+
+  // ratio
+  var rs=[]; for(var i=1;i<4;i++){rs.push(LO[i]/LO[i-1]); rs.push(HI[i]/HI[i-1]);}
+  var mean=rs.reduce(function(a,b){return a+b;},0)/rs.length;
+  document.getElementById('ratio').textContent=mean.toFixed(3)+'×';
+
+  // harmonics table
+  function nearest(f){
+    var best=null;
+    ALL.forEach(function(t){ var d=Math.abs(t-f)/t*100; if(best===null||d<best.d) best={t:t,d:d}; });
+    return best;
+  }
+  var rows='<tr><th>Tone</th><th>&times;2</th><th>miss</th><th>&times;3</th><th>miss</th></tr>', worst=1e9;
+  ALL.forEach(function(f){
+    var n2=nearest(f*2), n3=nearest(f*3);
+    var s2=(f*2>1700)?'&mdash;':n2.d.toFixed(1)+'%', s3=(f*3>1700)?'&mdash;':n3.d.toFixed(1)+'%';
+    if(f*2<=1700) worst=Math.min(worst,n2.d);
+    if(f*3<=1700) worst=Math.min(worst,n3.d);
+    rows+='<tr><td>'+f+' Hz</td><td>'+(f*2)+'</td><td class="safe">'+s2+'</td><td>'+(f*3)+'</td><td class="safe">'+s3+'</td></tr>';
+  });
+  document.getElementById('harm').innerHTML=rows;
+  document.getElementById('worst').innerHTML='A dash means the multiple has climbed clear out of the band and there is nothing up there to hit. The closest any echo ever gets to a real tone is <b>'+worst.toFixed(1)+'%</b> off &mdash; wider than the tolerance a decoder will accept, so it is never a digit.';
+
+  // waveform
+  var W=620,H=120,MID=60,AMP=24;
+  function wave(f,el,amp,off){
+    var p=[],cyc=f/697*6;
+    for(var i=0;i<=300;i++){ var x=i/300; p.push((x*W).toFixed(1)+' '+(MID+off-amp*Math.sin(x*cyc*2*Math.PI)).toFixed(1)); }
+    el.setAttribute('d','M'+p.join(' L'));
+  }
+  function sum(l,h){
+    var p=[];
+    for(var i=0;i<=600;i++){ var x=i/600;
+      var v=Math.sin(x*(l/697*6)*2*Math.PI)+Math.sin(x*(h/697*6)*2*Math.PI);
+      p.push((x*W).toFixed(1)+' '+(MID-v*AMP).toFixed(1)); }
+    document.getElementById('ws').setAttribute('d','M'+p.join(' L'));
+  }
+  function draw(l,h){
+    wave(l,document.getElementById('wl'),11,-34);
+    wave(h,document.getElementById('wh'),11,34);
+    sum(l,h);
+  }
+
+  // audio
+  var ctx=null;
+  function play(l,h){
+    try{
+      ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();
+      if(ctx.state==='suspended') ctx.resume();
+      var g=ctx.createGain(), t=ctx.currentTime;
+      g.gain.setValueAtTime(0.0001,t);
+      g.gain.exponentialRampToValueAtTime(0.22,t+0.012);
+      g.gain.setValueAtTime(0.22,t+0.20);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+0.26);
+      g.connect(ctx.destination);
+      [l,h].forEach(function(f){
+        var o=ctx.createOscillator(); o.type='sine'; o.frequency.value=f;
+        o.connect(g); o.start(t); o.stop(t+0.28);
+      });
+    }catch(e){}
+  }
+
+  var read=document.getElementById('read');
+  pad.addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b) return;
+    var l=+b.dataset.l, h=+b.dataset.h;
+    Array.prototype.forEach.call(pad.querySelectorAll('.key'),function(k){k.classList.remove('on');});
+    b.classList.add('on');
+    read.innerHTML='<b>'+b.textContent+'</b> &nbsp;=&nbsp; <span class="l">'+l+' Hz</span> + <span class="h">'+h+' Hz</span>, together, for about a fifth of a second.';
+    draw(l,h); play(l,h);
+  });
+  draw(697,1209);
+})();
+</script>
+</body>
+</html>
